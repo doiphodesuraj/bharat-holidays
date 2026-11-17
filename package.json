@@ -1,6 +1,6 @@
 {
   "name": "bharat-holidays",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Indian public, festival and state-wise bank holidays (RBI) with business-day utilities. Zero dependencies, TypeScript.",
   "type": "module",
   "main": "./dist/index.js",
@@ -11,14 +11,28 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "node --test \"test/**/*.test.ts\"",
     "prepublishOnly": "npm run build && npm test"
   },
-  "keywords": ["india", "indian", "holidays", "bank-holidays", "rbi", "festivals", "business-days", "working-days", "calendar", "red-days", "bharat"],
+  "keywords": [
+    "india",
+    "indian",
+    "holidays",
+    "bank-holidays",
+    "rbi",
+    "festivals",
+    "business-days",
+    "working-days",
+    "calendar",
+    "red-days",
+    "bharat"
+  ],
   "license": "MIT",
   "author": "doiphodesuraj",
   "repository": {
@@ -29,7 +43,9 @@
   "bugs": {
     "url": "https://github.com/doiphodesuraj/bharat-holidays/issues"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
     "typescript": "^5.8.0"
   }
