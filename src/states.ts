@@ -41,7 +41,18 @@ export const STATES = {
 export type StateCode = keyof typeof STATES;
 
 /** States whose state-wise holiday and bank holiday data is curated in this release. */
-export const SUPPORTED_STATES: readonly StateCode[] = ['DL', 'KA', 'KL', 'MH', 'TN', 'WB'];
+export const SUPPORTED_STATES = ['DL', 'KA', 'KL', 'MH', 'TN', 'WB'] as const satisfies readonly StateCode[];
+
+/**
+ * A state code this release has bank holiday data for. Functions that take a state use
+ * this type, so passing e.g. `'GJ'` is a TypeScript error instead of a runtime one.
+ * Widens automatically as states are added to `SUPPORTED_STATES`.
+ */
+export type SupportedStateCode = (typeof SUPPORTED_STATES)[number];
+
+export function isSupportedState(value: string): value is SupportedStateCode {
+  return (SUPPORTED_STATES as readonly string[]).includes(value);
+}
 
 export function isStateCode(value: string): value is StateCode {
   return Object.prototype.hasOwnProperty.call(STATES, value);

@@ -6,7 +6,7 @@ Indian public holidays, festivals and **state-wise bank holidays**, plus bank bu
 npm install bharat-holidays
 ```
 
-> **Status: 0.3.** 2026 bank holidays are **verified against the official RBI holiday matrix** for all six states. 2027 bank holidays are **provisional**: the RBI hadn't published its 2027 list as of 16 Nov 2026. Entries whose date may still move are flagged `tentative: true`.
+> **Status: 0.4.** 2026 bank holidays are **verified against the official RBI holiday matrix** for all six states. 2027 bank holidays are **provisional**: the RBI hadn't published its 2027 list as of 16 Nov 2026. Entries whose date may still move are flagged `tentative: true`.
 
 ## Usage
 
@@ -34,7 +34,36 @@ getHolidays(2026, { type: 'national' });
 upcomingHolidays({ state: 'TN', limit: 3 });
 ```
 
-Dates can be `YYYY-MM-DD` strings or `Date` objects. A `Date` is read in local time, so `new Date(2026, 0, 26)` is 26 January wherever the code runs. Functions always return ISO strings.
+### Dates and time zones
+
+Pass dates as **`YYYY-MM-DD` strings** where you can. They're used exactly as given, on any server. Functions always return `YYYY-MM-DD` strings.
+
+You can also pass a `Date`. A `Date` is a moment in time, and Indian banks open or close by the **date in India**, so the library converts it to the calendar date in IST (UTC+05:30, no daylight saving), whatever time zone your code runs in:
+
+```ts
+const d = new Date('2026-03-04T00:30:00+05:30'); // 00:30 in India on Holi
+
+d.toISOString().slice(0, 10);  // '2026-03-03'  ← UTC date, the wrong day for India
+isBankHoliday(d, 'DL');        // true          ← checked as 4 March, also on a UTC server
+```
+
+To get "today in India" as a string yourself:
+
+```ts
+new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date()); // 'YYYY-MM-DD'
+```
+
+### State codes are checked by TypeScript
+
+Functions that take a state accept `SupportedStateCode`, the six states with data (`'DL' | 'KA' | 'KL' | 'MH' | 'TN' | 'WB'`). A state without data is a compile error, not a runtime surprise:
+
+```ts
+isBankHoliday('2026-03-04', 'GJ');
+//                          ~~~~ error TS2345: Argument of type '"GJ"' is not assignable to
+//                               parameter of type '"DL" | "KA" | "KL" | "MH" | "TN" | "WB"'.
+```
+
+For a code that comes from user input, narrow it first with `isSupportedState(code)`. JavaScript callers still get a clear `RangeError` at runtime.
 
 ## API
 
@@ -76,13 +105,17 @@ interface Holiday {
 - `bank` follows the RBI's own convention: holidays that fall on a Sunday aren't listed (banks are shut anyway), so `getBankClosureReason` returns `sunday` for them.
 - City-only closures aren't modelled. For example, Thiruvananthapuram also closed on 3 Mar 2026 for Attukal Pongala.
 - **States with curated data:** Delhi (DL), Karnataka (KA), Kerala (KL), Maharashtra (MH), Tamil Nadu (TN), West Bengal (WB)
-- `STATES` exports ISO 3166-2:IN codes for every state and union territory.
+- `STATES` exports ISO 3166-2:IN codes for every state and union territory (`StateCode`). `SUPPORTED_STATES` and the `SupportedStateCode` type list the ones with data.
 
 The library **throws instead of guessing**. A year or state without data raises a `RangeError`, so you never get a silent `false` for a day banks are actually closed.
 
 ## Contributing data
 
-Holiday data lives in `src/data/<year>.ts`, one entry per holiday per date. Every entry needs a `source`. Bank holidays come from the [RBI holiday matrix](https://www.rbi.org.in/Scripts/HolidayMatrixDisplay.aspx): pick the regional office and "All Months". When the RBI publishes a new year, add its list to a `test/rbi-<year>.test.ts` like the 2026 one, so the data is checked against it automatically. Run `npm test` before you open it: it checks that dates are sorted and state codes are valid.
+Holiday data lives in `src/data/<year>.ts`, one entry per holiday per date. Every entry needs a `source`. Bank holidays come from the [RBI holiday matrix](https://www.rbi.org.in/Scripts/HolidayMatrixDisplay.aspx): pick the regional office and "All Months". When the RBI publishes a new year, add its list to a `test/rbi-<year>.test.ts` like the 2026 one, so the data is checked against it automatically. Run `npm test` before you open it: it type-checks the code and tests, checks that dates are sorted and state codes are valid, and runs the date tests under several server time zones.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

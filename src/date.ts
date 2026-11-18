@@ -2,16 +2,26 @@ import type { DateInput } from './types.ts';
 
 const ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 
+/** India Standard Time is UTC+05:30 all year (no daylight saving). */
+const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+
 /**
  * Normalises input to `YYYY-MM-DD`.
- * Strings must be ISO dates. `Date` objects are read in the runtime's local time zone,
- * so `new Date(2026, 0, 26)` is 26 January wherever the code runs.
+ *
+ * - Strings must be ISO dates and are used as-is. This is the recommended input.
+ * - `Date` objects are an instant in time, so they are converted to the calendar date
+ *   **in India (IST)** at that instant, whatever time zone the code runs in. Banks in
+ *   India open or close by Indian date, so 00:30 IST on 4 March is 4 March even on a
+ *   UTC server, where `toISOString()` would say 3 March.
  */
 export function toISODate(input: DateInput): string {
   if (input instanceof Date) {
-    if (Number.isNaN(input.getTime())) throw new TypeError('Invalid Date');
-    return format(input.getFullYear(), input.getMonth() + 1, input.getDate());
+    const t = input.getTime();
+    if (Number.isNaN(t)) throw new TypeError('Invalid Date');
+    const ist = new Date(t + IST_OFFSET_MS);
+    return format(ist.getUTCFullYear(), ist.getUTCMonth() + 1, ist.getUTCDate());
   }
+  if (typeof input !== 'string') throw new TypeError(`Expected a YYYY-MM-DD string or a Date, got ${typeof input}`);
   const m = ISO.exec(input);
   if (!m) throw new TypeError(`Expected a YYYY-MM-DD string, got "${input}"`);
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];

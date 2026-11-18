@@ -1,6 +1,6 @@
 {
   "name": "bharat-holidays",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Indian public, festival and state-wise bank holidays (RBI) with business-day utilities. Zero dependencies, TypeScript.",
   "type": "module",
   "main": "./dist/index.js",
@@ -17,7 +17,8 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "npm run typecheck && node --test \"test/**/*.test.ts\"",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
@@ -47,6 +48,7 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@types/node": "^24.19.2",
     "typescript": "^5.8.0"
   }
 }

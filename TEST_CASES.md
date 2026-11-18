@@ -1,7 +1,7 @@
 # bharat-holidays: test cases
 
-**Run:** `npm test`, or `npm test -- --experimental-test-coverage` for coverage.
-**Last result:** 37 / 37 passed · Node 24.21, Windows 11 · 16 Nov 2026 (v0.3.0)
+**Run:** `npm test` (type-checks the code and tests, then runs them). Add `-- --experimental-test-coverage` for coverage.
+**Last result:** 44 / 44 passed + type checks · Node 24.21, Windows 11 · 18 Nov 2026 (v0.4.0)
 
 | Suite | File | Tests |
 |---|---|---|
@@ -11,7 +11,35 @@
 | D. Holiday queries | both | 6 |
 | E. Input validation and errors | both | 5 |
 | **G. Official RBI 2026 match** | `test/rbi-2026.test.ts` | 6 |
+| **H. Time zones** (new in 0.4.0) | `test/timezone.test.ts` | 7 |
+| **T. Compile-time state types** (new in 0.4.0) | `test/types.check.ts` | 5 checks |
 | F. Package install check (manual) | outside the repo | 4 checks |
+
+## H. Time zones: same answer on every server (0.4.0)
+
+A `Date` is an instant; banks in India open by the **date in India**. Each case runs under six server time zones: UTC, Asia/Kolkata, America/New_York, Europe/Berlin, Pacific/Kiritimati (UTC+14) and Pacific/Pago_Pago (UTC−11).
+
+| ID | Case | Expected | Result |
+|---|---|---|---|
+| H1–H6 | `new Date('2026-03-04T00:30:00+05:30')` (00:30 IST on Holi) | Read as `2026-03-04`; Delhi bank holiday = `true` | ✅ all 6 zones |
+| | `18:29:59.999Z` / `18:30:00Z` on 3 Mar | `2026-03-03` / `2026-03-04` (exact IST midnight) | ✅ |
+| | 23:59 IST on 31 Dec 2027; 00:00 IST on 1 Jan 2027 | Same IST date, also across the year boundary | ✅ |
+| | Date input vs the equivalent string | Identical results | ✅ |
+| H7 | `YYYY-MM-DD` strings in all 6 zones | Never shifted | ✅ |
+
+**Proof the tests catch the bug:** with the old logic (server's local time) put back temporarily, 5 of the 6 zone tests failed; only Asia/Kolkata passed. With the fix, all pass.
+
+## T. Compile-time state types (0.4.0)
+
+`npm test` runs `tsc` on `test/types.check.ts`. Each `@ts-expect-error` line must fail to compile, or the build fails.
+
+| Check | Expected |
+|---|---|
+| `isBankHoliday(d, 'DL')`, `getHolidays(2026, { state: 'KL' })` | Compile |
+| `isBankHoliday(d, 'GJ')` (real state, no data) | Compile error |
+| `nextWorkingDay(d, 'XX')` (unknown code) | Compile error |
+| `getHolidays(2026, { state: 'GJ' })` | Compile error |
+| A general `StateCode` from user input | Error until narrowed with `isSupportedState()`, then compiles |
 
 ---
 

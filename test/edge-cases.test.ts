@@ -146,7 +146,9 @@ test('upcomingHolidays honours limit, including 0', () => {
 
 test('toISODate accepts valid input and rejects invalid input', () => {
   assert.equal(toISODate('2028-02-29'), '2028-02-29'); // leap day is a real date
-  assert.equal(toISODate(new Date(2027, 11, 31, 23, 59)), '2027-12-31');
+  assert.equal(toISODate(new Date('2027-12-31T23:59:00+05:30')), '2027-12-31');
+  assert.equal(toISODate(new Date('2027-12-31T23:59:00Z')), '2028-01-01'); // already 05:29 on 1 Jan in India
+  assert.throws(() => toISODate(42 as never), /YYYY-MM-DD string or a Date/);
   assert.throws(() => toISODate('2027-02-29'), /Not a real calendar date/);
   assert.throws(() => toISODate('2026-13-01'), /Not a real calendar date/);
   assert.throws(() => toISODate('2026-1-5'), /YYYY-MM-DD/);
@@ -156,6 +158,7 @@ test('toISODate accepts valid input and rejects invalid input', () => {
 test('invalid arguments throw clear errors', () => {
   assert.throws(() => addBusinessDays('2026-11-16', 1.5, 'DL'), /integer/);
   assert.throws(() => countWorkingDays('2026-11-20', '2026-11-16', 'DL'), /must not be after/);
+  // @ts-expect-error  Runtime check for JavaScript callers; TypeScript rejects 'GJ' already.
   assert.throws(() => getHolidays(2026, { state: 'GJ' }), /no curated data yet/);
   assert.throws(() => getHolidays(2025), /no data for 2025/);
   // Running off the end of the data throws instead of silently treating 2028 as all working days.

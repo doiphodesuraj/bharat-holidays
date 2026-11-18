@@ -1,11 +1,11 @@
 import { holidays2026 } from './data/2026.ts';
 import { holidays2027 } from './data/2027.ts';
 import { addDays, dayOfMonth, dayOfWeek, toISODate, yearOf } from './date.ts';
-import { STATES, SUPPORTED_STATES, type StateCode } from './states.ts';
+import { STATES, SUPPORTED_STATES, isSupportedState, type SupportedStateCode } from './states.ts';
 import type { BankClosureReason, DateInput, Holiday, HolidayQuery, HolidayType, StateScope } from './types.ts';
 
-export { STATES, SUPPORTED_STATES, isStateCode } from './states.ts';
-export type { StateCode } from './states.ts';
+export { STATES, SUPPORTED_STATES, isStateCode, isSupportedState } from './states.ts';
+export type { StateCode, SupportedStateCode } from './states.ts';
 export type { BankClosureReason, DateInput, Holiday, HolidayQuery, HolidayType, StateScope } from './types.ts';
 export { toISODate } from './date.ts';
 
@@ -27,8 +27,9 @@ function dataFor(year: number): readonly Holiday[] {
   return list;
 }
 
-function assertSupportedState(state: string): asserts state is StateCode {
-  if (!(SUPPORTED_STATES as readonly string[]).includes(state)) {
+// Still checked at runtime for JavaScript callers and values that bypass the types.
+function assertSupportedState(state: string): asserts state is SupportedStateCode {
+  if (!isSupportedState(state)) {
     const known = Object.prototype.hasOwnProperty.call(STATES, state);
     throw new RangeError(
       `${known ? `State "${state}" has no curated data yet` : `Unknown state code "${state}"`}. ` +
@@ -37,7 +38,7 @@ function assertSupportedState(state: string): asserts state is StateCode {
   }
 }
 
-function inScope(scope: StateScope | undefined, state: StateCode): boolean {
+function inScope(scope: StateScope | undefined, state: SupportedStateCode): boolean {
   if (!scope) return false;
   return scope === 'ALL' || scope.includes(state);
 }
@@ -82,7 +83,7 @@ export function isHoliday(date: DateInput, query: HolidayQuery = {}): boolean {
  * Why banks in `state` are closed on `date`, or `null` if they are open.
  * Covers Sundays, 2nd and 4th Saturdays (RBI rule since Sept 2015) and NI Act holidays.
  */
-export function getBankClosureReason(date: DateInput, state: StateCode): BankClosureReason | null {
+export function getBankClosureReason(date: DateInput, state: SupportedStateCode): BankClosureReason | null {
   assertSupportedState(state);
   const iso = toISODate(date);
   const holidays = dataFor(yearOf(iso)).filter((h) => h.date === iso && inScope(h.bank, state));
@@ -98,16 +99,16 @@ export function getBankClosureReason(date: DateInput, state: StateCode): BankClo
 }
 
 /** `true` if banks in `state` are closed on `date`. */
-export function isBankHoliday(date: DateInput, state: StateCode): boolean {
+export function isBankHoliday(date: DateInput, state: SupportedStateCode): boolean {
   return getBankClosureReason(date, state) !== null;
 }
 
 /** `true` if banks in `state` are open on `date`. */
-export function isWorkingDay(date: DateInput, state: StateCode): boolean {
+export function isWorkingDay(date: DateInput, state: SupportedStateCode): boolean {
   return !isBankHoliday(date, state);
 }
 
-function step(date: DateInput, state: StateCode, dir: 1 | -1): string {
+function step(date: DateInput, state: SupportedStateCode, dir: 1 | -1): string {
   let iso = toISODate(date);
   do {
     iso = addDays(iso, dir);
@@ -116,12 +117,12 @@ function step(date: DateInput, state: StateCode, dir: 1 | -1): string {
 }
 
 /** First bank working day strictly after `date`. */
-export function nextWorkingDay(date: DateInput, state: StateCode): string {
+export function nextWorkingDay(date: DateInput, state: SupportedStateCode): string {
   return step(date, state, 1);
 }
 
 /** Last bank working day strictly before `date`. */
-export function previousWorkingDay(date: DateInput, state: StateCode): string {
+export function previousWorkingDay(date: DateInput, state: SupportedStateCode): string {
   return step(date, state, -1);
 }
 
@@ -129,7 +130,7 @@ export function previousWorkingDay(date: DateInput, state: StateCode): string {
  * Moves `days` bank working days from `date` (negative goes backwards).
  * `addBusinessDays(d, 0, s)` returns `d` itself if it's a working day, else the next one.
  */
-export function addBusinessDays(date: DateInput, days: number, state: StateCode): string {
+export function addBusinessDays(date: DateInput, days: number, state: SupportedStateCode): string {
   if (!Number.isInteger(days)) throw new TypeError('days must be an integer');
   const start = toISODate(date);
   if (days === 0) return isWorkingDay(start, state) ? start : nextWorkingDay(start, state);
@@ -140,7 +141,7 @@ export function addBusinessDays(date: DateInput, days: number, state: StateCode)
 }
 
 /** Bank working days in the inclusive range `from`…`to`. */
-export function countWorkingDays(from: DateInput, to: DateInput, state: StateCode): number {
+export function countWorkingDays(from: DateInput, to: DateInput, state: SupportedStateCode): number {
   let iso = toISODate(from);
   const end = toISODate(to);
   if (iso > end) throw new RangeError('`from` must not be after `to`');

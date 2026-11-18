@@ -61,8 +61,11 @@ test('a holiday on a 3rd Saturday closes banks', () => {
   assert.equal(r?.kind, 'holiday');
 });
 
-test('Date objects are read as local calendar dates', () => {
-  assert.equal(isBankHoliday(new Date(2026, 0, 26), 'TN'), true);
+test('Date objects are read as the calendar date in India', () => {
+  // Explicit offsets keep this test independent of the machine's time zone
+  // (test/timezone.test.ts runs these checks under several server time zones).
+  assert.equal(isBankHoliday(new Date('2026-01-26T10:00:00+05:30'), 'TN'), true);
+  assert.equal(isBankHoliday(new Date('2026-01-26T00:15:00+05:30'), 'TN'), true);
 });
 
 test('next / previous working day skip weekends and holidays', () => {
@@ -112,6 +115,8 @@ test('upcomingHolidays', () => {
 
 test('refuses to guess for unsupported years, states and bad input', () => {
   assert.throws(() => isBankHoliday('2028-01-26', 'MH'), /no data for 2028/);
+  // JavaScript callers have no types, so the runtime check must still work.
+  // @ts-expect-error  'GJ' is rejected at compile time too (see types.check.ts).
   assert.throws(() => isBankHoliday('2026-01-26', 'GJ'), /no curated data yet/);
   assert.throws(() => isBankHoliday('2026-01-26', 'XX' as never), /Unknown state code/);
   assert.throws(() => isHoliday('26-01-2026'), /YYYY-MM-DD/);

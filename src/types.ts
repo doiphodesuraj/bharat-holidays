@@ -1,4 +1,4 @@
-import type { StateCode } from './states.ts';
+import type { StateCode, SupportedStateCode } from './states.ts';
 
 export type HolidayType =
   /** National holidays: Republic Day, Independence Day, Gandhi Jayanti. */
@@ -42,7 +42,7 @@ export type DateInput = string | Date;
 
 export interface HolidayQuery {
   /** Only holidays observed in this state (all-India ones are always included). */
-  state?: StateCode;
+  state?: SupportedStateCode;
   /** Only holidays carrying at least one of these types. */
   type?: HolidayType | readonly HolidayType[];
   /** Only holidays that are bank holidays (in `state`, if given). */
